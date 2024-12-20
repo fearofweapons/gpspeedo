@@ -1,4 +1,3 @@
-#include <Arduino.h>
 #include <TinyGPSPlus.h>
 #include "TFT_eSPI.h"
 #include "Button2.h"
