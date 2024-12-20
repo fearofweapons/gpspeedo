@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <TinyGPSPlus.h>
 #include "TFT_eSPI.h"
 #include "Button2.h"
@@ -47,6 +48,7 @@ void setup()
   tft.begin();
   tft.setRotation(1); //landscape with USB port on the right
   tft.fillScreen(TFT_BLACK);
+  tft.drawString("Hello",10,10);
   
 //Sart each button and define what gets called for each type of button click
 //only single and long clicks are being handled. Each click type or button could have it's own function.
@@ -63,18 +65,18 @@ void loop()
   //'zero' the millis delay
   unsigned long milli_start=millis();
 
-  while (gpsSerial.available() > 0){
+  //while (gpsSerial.available() > 0){
   //send the serial buffer to TinyGPS until it's empty
-    gps.encode(gpsSerial.read());
-  }
+    //gps.encode(gpsSerial.read());
+  //}
   //While waiting for the GPS to update check to see if a button is pressed...  
-    while(milli_start+milli_delay>millis()){
-      buttonA.loop();
-      buttonB.loop();
-    }
+    //while(milli_start+milli_delay>millis()){
+      //buttonA.loop();
+      //buttonB.loop();
+    //}
     
   // display GPS info on the LCD...  
-    displayInfo();
+    //displayInfo();
 }
 
 void displayInfo()
@@ -84,6 +86,21 @@ void displayInfo()
   //Setup time vars. TinyGPS does not show leading 0 for time so we have to add them.
   String shour="",smin="";
 
+  //force the text 'anchor' to be bottom left so we can print exactly smae place as it changes from mph to kph
+  tft.setTextDatum(BL_DATUM);
+  tft.setTextSize(2);
+  
+  //determine if speed is in Miles or K
+  //show units, default is miles
+  if(units=="m"){
+    spd=gps.speed.mph();
+    //4 is a 'normal' font that has all alphanumerc chars
+    tft.drawString("mph  ",200,70,4);  
+  } else if(units=="k"){
+    spd=gps.speed.kmph();
+    tft.drawString("kph  ",200,70,4);
+  }
+  
   //Setup the display for speed
   tft.setTextWrap(false, false);
   tft.setTextSize(2);
@@ -97,19 +114,8 @@ void displayInfo()
   } else if(spd>=5){
     tft.drawRightString("   " + String(spd),200,10,7);
   }
-  //show units, default is miles
-  if (units=="m"){
-    //force the text 'anchor' to be bottom left so we can print exactly smae place as it changes from mph to kph
-    tft.setTextDatum(BL_DATUM);
-    tft.setTextSize(2);
-    //4 is a 'normal' font that has all alphanumerc chars
-    tft.drawString("mph  ",200,70,4);
-  } else if (units=="k"){
-    tft.setTextDatum(BL_DATUM);
-    tft.setTextSize(2);
-    tft.drawString("kph  ",200,70,4);
-  }
-   //set text anchor back to default top left corner of the text being written.
+
+  //set text anchor back to default top left corner of the text being written.
    tft.setTextDatum(TL_DATUM);
    tft.setTextSize(1);
    tft.setTextFont(4);
@@ -215,37 +221,36 @@ void click(Button2& btn){
               Serial.print("Brightness : ");
               Serial.println(String(brightness));
             }
-            else if(brightness>=250){
+            else if(brightness>250){
               brightness=50;
               analogWrite(PIN_LCD_BL,brightness);
               Serial.print("Brightness : ");
               Serial.println(String(brightness));
             }
-            Serial.println("A clicked");
           } 
           else if (btn == buttonB) {
             //cycles through different text colours. Default is white. To change default change value of TXT_Colour at the start.
-            if(TXT_Colour == TFT_WHITE){
+            switch(TXT_Colour){
+              case TFT_WHITE:
                 TXT_Colour=TFT_GREEN;
                 displayInfo();
-                //tft.setTextColor(TXT_Colour, TXT_Back);
-            } 
-            else if (TXT_Colour==TFT_GREEN) {
-              TXT_Colour=TFT_ORANGE;
-              displayInfo();
-              //tft.setTextColor(TXT_Colour, TXT_Back);
+                break;
+              case TFT_GREEN:
+                TXT_Colour=TFT_ORANGE;
+                displayInfo();
+                break;
+              case TFT_ORANGE:
+                TXT_Colour=TFT_RED;
+                displayInfo();
+                break;
+              case TFT_RED:
+                TXT_Colour=TFT_WHITE;
+                displayInfo();
+                break;
+              case empty:
+                return;
             }
-            else if (TXT_Colour==TFT_ORANGE) {
-              TXT_Colour=TFT_RED;
-              displayInfo();
-              //tft.setTextColor(TXT_Colour, TXT_Back);
             }
-            else if (TXT_Colour==TFT_RED) {
-              TXT_Colour=TFT_WHITE;
-              displayInfo();
-              //tft.setTextColor(TXT_Colour, TXT_Back);
-            }
-          }
             break;
         case double_click:
             //not used
