@@ -220,7 +220,7 @@ void click(Button2& btn){
               Serial.print("Brightness : ");
               Serial.println(String(brightness));
             }
-            else if(brightness>250){
+            else if(brightness>=250){
               brightness=50;
               analogWrite(PIN_LCD_BL,brightness);
               Serial.print("Brightness : ");
