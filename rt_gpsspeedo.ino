@@ -1,6 +1,8 @@
+#include <Arduino.h>
 #include <TinyGPSPlus.h>
 #include "TFT_eSPI.h"
 #include "Button2.h"
+#include "Timezone.h"
 
 //Serial Ports GPS is connected to.
 #define RXD2 18
@@ -26,10 +28,20 @@ TFT_eSPI tft = TFT_eSPI();
 //Start two instances of the button
 Button2 buttonA, buttonB;
 
+//Define the time zone rules for BST ( London )
+TimeChangeRule ukDST = {"BST", Last, Sun, Mar, 2, +60};  // Daylight time = UTC + 1 hours
+TimeChangeRule ukGMT = {"GMT", Last, Sun, Oct, 2, +0};   // GMT = UTC + 0 hours
+Timezone uk(ukDST, ukGMT);
+
 //setup variables for latter use
 unsigned long milli_delay=500;
 int spd=0,num_sats=0,brightness=250,TXT_Colour=TFT_WHITE,TXT_Back=TFT_BLACK;
 String units="m",dir="c";
+
+// time variables
+time_t t_local, t_utc, t_prev_set;
+int t_timesetinterval = 3600; //set microcontroller time every hour seconds
+int t_set=0;
 
 void setup()
 {
@@ -73,7 +85,20 @@ void loop()
     buttonA.loop();
     buttonB.loop();
     }
-    
+  //check to see if gps time is valid if it is then..
+  if (gps.time.isValid())
+  {
+    //if time has not been set AND we can see some satellites to get the time then set it...
+    if(t_set==0 && gps.satellites.value()>0){
+      setthetime();
+    }
+    //if time has been set and the refresh interval has elapsed then refresh device time from satellites
+    else if (t_set==1 && now() - t_prev_set > t_timesetinterval)
+    {
+    setthetime();
+    t_prev_set = now();
+    }
+  }  
   // display GPS info on the LCD...  
   displayInfo();
 }
@@ -81,9 +106,6 @@ void loop()
 void displayInfo()
 {
   //Display GPS on the screen
-
-  //Setup time vars. TinyGPS does not show leading 0 for time so we have to add them.
-  String shour="",smin="";
 
   //force the text 'anchor' to be bottom left so we can print exactly smae place as it changes from mph to kph
   tft.setTextDatum(BL_DATUM);
@@ -119,33 +141,40 @@ void displayInfo()
    tft.setTextSize(1);
    tft.setTextFont(4);
 
-//Print UTC time to display. Not bothering with seconds or centiseconds
-//add leading zeros if single digit time.
-if (gps.time.hour() < 10) {
-  shour="0"+String(gps.time.hour());
-} else{
-  shour=String(gps.time.hour());
-}
-if (gps.time.minute() < 10) {
-  smin="0"+String(gps.time.minute());
-} else{
-  smin=String(gps.time.minute());
-}
-  tft.drawString("T: "+ shour + ":" + smin +"  ",10,120);
+//if time has been set then display the time
+  if (t_set==1)
+  {
+  displaythetime();
+  }
+  else
+  {
+    tft.drawString("T: --:--",10,120);
+  }
 
-  
 //Print Number of satellites to the display
   tft.drawString("S: " + String(gps.satellites.value())+"    ",10,150);
 
 //Print alititude to display
+  if(gps.satellites.value()<1)
+  {
+    tft.drawString("ALT: --    ",180,120);
+  }
+  else {
   tft.drawString("ALT: " + String(int(gps.altitude.meters()))+"    ",180,120);
+  }
 
   //Print heading to dispaly in degrees or Compass Points
-  if(dir=="d"){
-    tft.drawString(" D: " + String(int(gps.course.deg()))+"       ",200,150);
-  } else if(dir=="c") {
-    tft.drawString(" C: " + String(TinyGPSPlus::cardinal(gps.course.deg()))+"       ",200,150);
-  }  
+  if (gps.satellites.value()<1)
+  {
+    tft.drawString("D: --    ",200,150);
+  }
+  else {
+    if(dir=="d"){
+      tft.drawString(" D: " + String(int(gps.course.deg()))+"       ",200,150);
+    } else if(dir=="c") {
+      tft.drawString(" C: " + String(TinyGPSPlus::cardinal(gps.course.deg()))+"       ",200,150);
+    } 
+  } 
   
 //determine if speed is in Miles or K
   if(units=="m"){
@@ -154,57 +183,6 @@ if (gps.time.minute() < 10) {
     spd=gps.speed.kmph();
   }
 
-//send info to the serial monitor for debugging.
-  Serial.print(F("Location: ")); 
-  if (gps.location.isValid())
-  {
-    Serial.print(gps.location.lat(), 6);
-    Serial.print(F(","));
-    Serial.print(gps.location.lng(), 6);
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-
-  Serial.print(F("  Date/Time: "));
-  if (gps.date.isValid())
-  {
-    Serial.print(gps.date.month());
-    Serial.print(F("/"));
-    Serial.print(gps.date.day());
-    Serial.print(F("/"));
-    Serial.print(gps.date.year());
-  }
-  else
-  {
-    Serial.println(F("INVALID"));
-  }
-
-  Serial.print(F(" "));
-  if (gps.time.isValid())
-  {
-    Serial.println("");
-    Serial.print("Satellites = "); 
-    Serial.println(gps.satellites.value()); 
-    if (gps.time.hour() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.hour());
-    Serial.print(F(":"));
-    if (gps.time.minute() < 10) Serial.print(F("0"));
-    Serial.print(gps.time.minute());
-    Serial.print(F(":"));
-    if (gps.time.second() < 10) Serial.print(F("0"));
-    Serial.println(gps.time.second());
-  }
-  else
-  {
-    Serial.print(F("INVALID"));
-  }
-  Serial.println("Speed: "+String(spd));
-  Serial.println("Card: " + String(TinyGPSPlus::cardinal(gps.course.deg())));
-  Serial.println("-------------------------------");
-
-  Serial.println();
 }
 
 //Handle the button clicks
@@ -285,5 +263,44 @@ void click(Button2& btn){
             return;
     }
   
+
+}
+
+void setthetime(void)
+{
+  // Set Time from GPS data string
+  int Year = gps.date.year();
+  byte Month = gps.date.month();
+  byte Day = gps.date.day();
+  byte Hour = gps.time.hour();
+  byte Minute = gps.time.minute();
+  byte Second = gps.time.second();
+  // set the time of the microcontroller to the UTC time from the GPS
+  setTime(Hour, Minute, Second, Day, Month, Year);
+  //set the flag to say time has been set...
+  t_set=1;
+}
+
+void displaythetime(void)
+{
+  //Setup time vars. TinyGPS does not show leading 0 for time so we have to add them.
+  String shour="",smin="";
+  t_utc = now();  // read the time in the correct format to change via the TimeChangeRules
+  //put the UTC time through the timezone DST rules
+  t_local = uk.toLocal(t_utc);
+  //Print local time to display. Not bothering with seconds or centiseconds
+  //add leading zeros if single digit time.
+  if (hour(t_local) < 10) {
+    shour="0"+String(hour(t_local));
+  } else{
+    shour=String(hour(t_local));
+  }
+  if (minute(t_local) < 10) {
+    smin="0"+String(minute(t_local));
+  } else{
+    smin=String(minute(t_local));
+  }
+    //print the time to the display
+    tft.drawString("T: "+ shour + ":" + smin +"  ",10,120);
 
 }
