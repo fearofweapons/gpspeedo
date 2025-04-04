@@ -47,7 +47,7 @@ void setup()
   tft.begin();
   tft.setRotation(1); //landscape with USB port on the right
   tft.fillScreen(TFT_BLACK);
-  tft.drawString("Hello",10,10);
+  //tft.drawString("Hello",10,10);
   
 //Sart each button and define what gets called for each type of button click
 //only single and long clicks are being handled. Each click type or button could have it's own function.
@@ -64,18 +64,18 @@ void loop()
   //'zero' the millis delay
   unsigned long milli_start=millis();
 
-  //while (gpsSerial.available() > 0){
+  while (gpsSerial.available() > 0){
   //send the serial buffer to TinyGPS until it's empty
-    //gps.encode(gpsSerial.read());
-  //}
+    gps.encode(gpsSerial.read());
+  }
   //While waiting for the GPS to update check to see if a button is pressed...  
-    //while(milli_start+milli_delay>millis()){
-      //buttonA.loop();
-      //buttonB.loop();
-    //}
+  while(milli_start+milli_delay>millis()){
+    buttonA.loop();
+    buttonB.loop();
+    }
     
   // display GPS info on the LCD...  
-    //displayInfo();
+  displayInfo();
 }
 
 void displayInfo()
