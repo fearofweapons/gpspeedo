@@ -40,7 +40,7 @@ String units="m",dir="c";
 
 // time variables
 time_t t_prev_set;
-int t_timesetinterval = 3600; //set microcontroller time every hour seconds
+int t_timesetinterval = 3600; //set microcontroller time every hour
 int t_set=0;
 
 void setup()
@@ -59,10 +59,9 @@ void setup()
   tft.begin();
   tft.setRotation(1); //landscape with USB port on the right
   tft.fillScreen(TFT_BLACK);
-  //tft.drawString("Hello",10,10);
-  
+
 //Sart each button and define what gets called for each type of button click
-//only single and long clicks are being handled. Each click type or button could have it's own function.
+//only single and long clicks are being handled. Each button click type could have it's own function.
   buttonA.begin(BUTTON_A_PIN);
   buttonA.setClickHandler(click);
   buttonA.setLongClickHandler(click);
@@ -88,25 +87,25 @@ void loop()
   //check to see if gps time is valid if it is then..
   if (gps.time.isValid())
   {
-    //if time has not been set AND we can see some satellites to get the time then set it...
-    if (t_set==1 && (now() - t_prev_set > t_timesetinterval))
+    //if time has been set AND the refresh interval has expiredf AND we can see some satellites to get the time then set it...
+    if (t_set==1 && (now() - t_prev_set > t_timesetinterval) && (gps.satellites.value()>0) )
     {
     setthetime();
     t_prev_set = now();
     }
+    //if time has not been set AND we can see some satellites to set it...
     else if(t_set==0 && (gps.satellites.value()>0))
     {
       setthetime();
     }
   }  
-  // display GPS info on the LCD...  
+  // display GPS info...  
   displayInfo();
 }
 
 void displayInfo()
 {
   //Display GPS on the screen
-
   //force the text 'anchor' to be bottom left so we can print exactly smae place as it changes from mph to kph
   tft.setTextDatum(BL_DATUM);
   tft.setTextSize(2);
@@ -117,12 +116,12 @@ void displayInfo()
     spd=gps.speed.mph();
     //4 is a 'normal' font that has all alphanumerc chars
     tft.drawString("mph  ",200,70,4);  
-  } else if(units=="k"){
+  }
+  else if(units=="k"){
     spd=gps.speed.kmph();
     tft.drawString("kph  ",200,70,4);
   }
 
- 
   //Setup the display for speed
   tft.setTextWrap(false, false);
   tft.setTextSize(2);
@@ -130,7 +129,7 @@ void displayInfo()
   //GPS is not very accurate below 5 so set display to -- if below 5 or there are no satellites...
   if (spd<5 || gps.satellites.value()<1 ){
     //drawRightString sets the bottom right corner of the text to the co-ords listed. Default would be to set the top left corner
-    //no good for strings that change length where we need to know where they end
+    // want bottom right so it is against the speed units, if we used top left as the speed increased into 3 digits it would over write the units....
     //7 is the font, a 7 segment LCD font so can only show numbers and - and _ etc. not much else
     tft.drawRightString("--",200,10,7);
   } 
@@ -140,6 +139,7 @@ void displayInfo()
   }
 
   //set text anchor back to default top left corner of the text being written.
+  //this is OK because the units are to the left of the changing numbers ( unlike speed ) so we want the left edge to be constant.
    tft.setTextDatum(TL_DATUM);
    tft.setTextSize(1);
    tft.setTextFont(4);
@@ -149,8 +149,7 @@ void displayInfo()
   {
   displaythetime();
   }
-  else
-  {
+  else  {
     tft.drawString("T: --:--",10,120);
   }
 
@@ -226,11 +225,12 @@ void click(Button2& btn){
             }
             }
             break;
+      
         case double_click:
             //not used
             Serial.print("double ");
-
             break;
+      
         case triple_click:
             //not used
             Serial.print("triple ");
@@ -256,16 +256,15 @@ void click(Button2& btn){
               displayInfo();
             }
             break;
+      
           case empty:
             return;
     }
-  
-
 }
 
 void setthetime(void)
 {
-  // Set Time from GPS data string
+  // Set Time from GPS date string
   int Year = gps.date.year();
   byte Month = gps.date.month();
   byte Day = gps.date.day();
@@ -298,7 +297,7 @@ void displaythetime(void)
   } else{
     smin=String(minute(t_local));
   }
-    //print the time to the display
+  //print the time to the display
     tft.drawString("T: "+ shour + ":" + smin +"  ",10,120);
 
 }
