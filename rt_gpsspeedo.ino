@@ -127,13 +127,15 @@ void displayInfo()
   tft.setTextWrap(false, false);
   tft.setTextSize(2);
   tft.setTextColor(TXT_Colour,TXT_Back);
-  //GPS is not very accurate below 5 so set display to -- if below 5...
-  if (spd<5){
+  //GPS is not very accurate below 5 so set display to -- if below 5 or there are no satellites...
+  if (spd<5 || gps.satellites.value()<1 ){
     //drawRightString sets the bottom right corner of the text to the co-ords listed. Default would be to set the top left corner
     //no good for strings that change length where we need to know where they end
     //7 is the font, a 7 segment LCD font so can only show numbers and - and _ etc. not much else
     tft.drawRightString("--",200,10,7);
-  } else if(spd>=5){
+  } 
+  //if speed if more than 5 and there is at least one satellite show the speed...
+  else if(spd>=5 && gps.satellites.value()> 0){
     tft.drawRightString("   " + String(spd),200,10,7);
   }
 
@@ -169,12 +171,12 @@ void displayInfo()
     tft.setTextFont(4);
   }
   else {
-  tft.drawString("ALT: " + String(int(gps.altitude.meters()))+"    ",180,120);
+  tft.drawString("ALT: " + String(int(gps.altitude.meters()))+"      ",180,120);
   if(dir=="d"){
-    tft.drawString(" D: " + String(int(gps.course.deg()))+"       ",200,150);
+    tft.drawString(" D: " + String(int(gps.course.deg()))+"         ",200,150);
     } 
     else if(dir=="c") {
-      tft.drawString(" C: " + String(TinyGPSPlus::cardinal(gps.course.deg()))+"       ",200,150);
+      tft.drawString(" C: " + String(TinyGPSPlus::cardinal(gps.course.deg()))+"         ",200,150);
     } 
   }
 
