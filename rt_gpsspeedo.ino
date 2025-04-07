@@ -108,6 +108,7 @@ void displayInfo()
   //Display GPS on the screen
   //force the text 'anchor' to be bottom left so we can print exactly smae place as it changes from mph to kph
   tft.setTextDatum(BL_DATUM);
+  tft.setTextColor(TXT_Colour,TXT_Back);
   tft.setTextSize(2);
   
   //determine if speed is in Miles or K
@@ -125,7 +126,7 @@ void displayInfo()
   //Setup the display for speed
   tft.setTextWrap(false, false);
   tft.setTextSize(2);
-  tft.setTextColor(TXT_Colour,TXT_Back);
+
   //GPS is not very accurate below 5 so set display to -- if below 5 or there are no satellites...
   if (spd<5 || gps.satellites.value()<1 ){
     //drawRightString sets the bottom right corner of the text to the co-ords listed. Default would be to set the top left corner
@@ -169,6 +170,7 @@ void displayInfo()
     tft.setTextSize(1);
     tft.setTextFont(4);
   }
+  //if we can see some satellites then show the data...
   else {
   tft.drawString("ALT: " + String(int(gps.altitude.meters()))+"      ",180,120);
   if(dir=="d"){
