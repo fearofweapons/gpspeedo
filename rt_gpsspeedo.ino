@@ -39,7 +39,7 @@ int spd=0,num_sats=0,brightness=250,TXT_Colour=TFT_WHITE,TXT_Back=TFT_BLACK;
 String units="m",dir="c";
 
 // time variables
-time_t t_local, t_utc, t_prev_set;
+time_t t_prev_set;
 int t_timesetinterval = 3600; //set microcontroller time every hour seconds
 int t_set=0;
 
@@ -89,14 +89,14 @@ void loop()
   if (gps.time.isValid())
   {
     //if time has not been set AND we can see some satellites to get the time then set it...
-    if(t_set==0 && gps.satellites.value()>0){
-      setthetime();
-    }
-    //if time has been set and the refresh interval has elapsed then refresh device time from satellites
-    else if (t_set==1 && now() - t_prev_set > t_timesetinterval)
+    if (t_set==1 && (now() - t_prev_set > t_timesetinterval))
     {
     setthetime();
     t_prev_set = now();
+    }
+    else if(t_set==0 && (gps.satellites.value()>0))
+    {
+      setthetime();
     }
   }  
   // display GPS info on the LCD...  
@@ -121,7 +121,8 @@ void displayInfo()
     spd=gps.speed.kmph();
     tft.drawString("kph  ",200,70,4);
   }
-  
+
+ 
   //Setup the display for speed
   tft.setTextWrap(false, false);
   tft.setTextSize(2);
@@ -154,33 +155,27 @@ void displayInfo()
 //Print Number of satellites to the display
   tft.drawString("S: " + String(gps.satellites.value())+"    ",10,150);
 
-//Print alititude to display
+//If there are no satellites blank the vaules. Time stays as thats taken from the device time.
   if(gps.satellites.value()<1)
   {
-    tft.drawString("ALT: --    ",180,120);
+    tft.drawString("ALT: --     ",180,120);
+    tft.drawString("D: --     ",200,150);
+    //set speeed font
+    tft.setTextSize(2);
+    tft.setTextColor(TXT_Colour,TXT_Back);
+    tft.drawRightString("--",200,10,7);
+    //flip font back to 'normal'
+    tft.setTextSize(1);
+    tft.setTextFont(4);
   }
   else {
   tft.drawString("ALT: " + String(int(gps.altitude.meters()))+"    ",180,120);
-  }
-
-  //Print heading to dispaly in degrees or Compass Points
-  if (gps.satellites.value()<1)
-  {
-    tft.drawString("D: --    ",200,150);
-  }
-  else {
-    if(dir=="d"){
-      tft.drawString(" D: " + String(int(gps.course.deg()))+"       ",200,150);
-    } else if(dir=="c") {
+  if(dir=="d"){
+    tft.drawString(" D: " + String(int(gps.course.deg()))+"       ",200,150);
+    } 
+    else if(dir=="c") {
       tft.drawString(" C: " + String(TinyGPSPlus::cardinal(gps.course.deg()))+"       ",200,150);
     } 
-  } 
-  
-//determine if speed is in Miles or K
-  if(units=="m"){
-  spd=gps.speed.mph();
-  } else if(units=="k"){
-    spd=gps.speed.kmph();
   }
 
 }
@@ -284,6 +279,7 @@ void setthetime(void)
 void displaythetime(void)
 {
   //Setup time vars. TinyGPS does not show leading 0 for time so we have to add them.
+  time_t t_local, t_utc;
   String shour="",smin="";
   t_utc = now();  // read the time in the correct format to change via the TimeChangeRules
   //put the UTC time through the timezone DST rules
