@@ -169,7 +169,6 @@ void displayInfo()
     } 
     //set speeed font
     tft.setTextSize(2);
-    tft.setTextColor(TXT_Colour,TXT_Back);
     tft.drawRightString("--",200,10,7);
     //flip font back to 'normal'
     tft.setTextSize(1);
