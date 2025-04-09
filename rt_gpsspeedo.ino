@@ -161,7 +161,12 @@ void displayInfo()
   if(gps.satellites.value()<1)
   {
     tft.drawString("ALT: --     ",180,120);
-    tft.drawString("D: --     ",200,150);
+      if(dir=="d"){
+        tft.drawString("D: --       ",200,150);
+    } 
+    else if(dir=="c"){
+      tft.drawString("C: --       ",200,150);
+    } 
     //set speeed font
     tft.setTextSize(2);
     tft.setTextColor(TXT_Colour,TXT_Back);
@@ -175,9 +180,11 @@ void displayInfo()
   tft.drawString("ALT: " + String(int(gps.altitude.meters()))+"      ",180,120);
   if(dir=="d"){
     tft.drawString(" D: " + String(int(gps.course.deg()))+"         ",200,150);
+    Serial.println(dir);
     } 
     else if(dir=="c") {
       tft.drawString(" C: " + String(TinyGPSPlus::cardinal(gps.course.deg()))+"         ",200,150);
+      Serial.println(dir);
     } 
   }
 
