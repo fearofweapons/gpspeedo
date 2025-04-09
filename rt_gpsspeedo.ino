@@ -179,7 +179,6 @@ void displayInfo()
   tft.drawString("ALT: " + String(int(gps.altitude.meters()))+"      ",180,120);
   if(dir=="d"){
     tft.drawString(" D: " + String(int(gps.course.deg()))+"         ",200,150);
-    Serial.println(dir);
     } 
     else if(dir=="c") {
       tft.drawString(" C: " + String(TinyGPSPlus::cardinal(gps.course.deg()))+"         ",200,150);
