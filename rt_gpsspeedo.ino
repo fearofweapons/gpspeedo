@@ -87,7 +87,7 @@ void loop()
   //check to see if gps time is valid if it is then..
   if (gps.time.isValid())
   {
-    //if time has been set AND the refresh interval has expiredf AND we can see some satellites to get the time then set it...
+    //if time has been set AND the refresh interval has expired AND we can see some satellites to get the time then set it...
     if (t_set==1 && (now() - t_prev_set > t_timesetinterval) && (gps.satellites.value()>0) )
     {
     setthetime();
@@ -167,18 +167,13 @@ void displayInfo()
     else if(dir=="c"){
       tft.drawString("C: --       ",200,150);
     } 
-    //set speeed font
-    tft.setTextSize(2);
-    tft.drawRightString("--",200,10,7);
-    //flip font back to 'normal'
-    tft.setTextSize(1);
-    tft.setTextFont(4);
   }
   //if we can see some satellites then show the data...
   else {
   tft.drawString("ALT: " + String(int(gps.altitude.meters()))+"      ",180,120);
   if(dir=="d"){
     tft.drawString(" D: " + String(int(gps.course.deg()))+"         ",200,150);
+    Serial.println(dir);
     } 
     else if(dir=="c") {
       tft.drawString(" C: " + String(TinyGPSPlus::cardinal(gps.course.deg()))+"         ",200,150);
