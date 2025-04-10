@@ -240,7 +240,7 @@ void click(Button2& btn){
 
         case long_click:
             //switch between mph and kph and update disaply
-            if (btn == buttonA) {
+            if (btn == buttonB) {
               if (units=="k"){
                 units="m";
                 } else if (units=="m"){
@@ -249,7 +249,7 @@ void click(Button2& btn){
               displayInfo();
             }
             //switch between degrees and cardinal and update display
-            if (btn == buttonB) {
+            if (btn == buttonA) {
               if (dir=="d"){
                 dir="c";
                 } else if (dir=="c"){
