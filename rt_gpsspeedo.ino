@@ -3,6 +3,7 @@
 #include "TFT_eSPI.h"
 #include "Button2.h"
 #include "Timezone.h"
+#include <Preferences.h>
 
 //Serial Ports GPS is connected to.
 #define RXD2 18
@@ -33,10 +34,15 @@ TimeChangeRule ukDST = {"BST", Last, Sun, Mar, 2, +60};  // Daylight time = UTC 
 TimeChangeRule ukGMT = {"GMT", Last, Sun, Oct, 2, +0};   // GMT = UTC + 0 hours
 Timezone uk(ukDST, ukGMT);
 
-//setup variables for latter use
+//create a preferences instance called prefs
+Preferences prefs;
+
+//setup global variables for latter use
 unsigned long milli_delay=500;
 int spd=0,num_sats=0,brightness=250,TXT_Colour=TFT_WHITE,TXT_Back=TFT_BLACK;
 String units="m",dir="c";
+bool stateIsSaved = true;
+long int lastButtonTime = millis();
 
 // time variables
 time_t t_prev_set;
@@ -68,6 +74,24 @@ void setup()
   buttonB.begin(BUTTON_B_PIN);
   buttonB.setClickHandler(click);
   buttonB.setLongClickHandler(click); 
+
+  //create a preferences names space called gps-spdo
+  prefs.begin("gps-spdo", false); 
+
+  //check to see if we there are any saved vaules if there are read them in
+  unsigned char flag = prefs.getUInt("mem_flag",0);
+  if (flag == 1){
+    units = prefs.getString("mem_units");
+    dir=prefs.getString("mem_dir");
+    TXT_Colour=prefs.getInt("mem_colour");
+    brightness=prefs.getInt("mem_bright");
+    //set the brightness here otherewise it won't be done 'till there is a GPS fix...
+    analogWrite(PIN_LCD_BL,brightness);
+  }
+  else{
+    saveCurrentState();
+    prefs.putUInt("mem_flag",1);
+  }
 }
 
 void loop()
@@ -84,6 +108,10 @@ void loop()
     buttonA.loop();
     buttonB.loop();
     }
+  //check to see if a button was pressed >10 seconds ago AND we need to update the saved state.
+  if (!stateIsSaved && (millis() - lastButtonTime > 10000)){ 
+    saveCurrentState();
+  } 
   //check to see if gps time is valid if it is then..
   if (gps.time.isValid())
   {
@@ -146,11 +174,10 @@ void displayInfo()
    tft.setTextFont(4);
 
 //if time has been set then display the time
-  if (t_set==1)
-  {
+  if (t_set==1){
   displaythetime();
   }
-  else  {
+  else{
     tft.drawString("T: --:--",10,120);
   }
 
@@ -158,8 +185,7 @@ void displayInfo()
   tft.drawString("S: " + String(gps.satellites.value())+"    ",10,150);
 
 //If there are no satellites blank the vaules. Time stays as thats taken from the device time.
-  if(gps.satellites.value()<1)
-  {
+  if(gps.satellites.value()<1){
     tft.drawString("ALT: --     ",180,120);
       if(dir=="d"){
         tft.drawString("D: --       ",200,150);
@@ -169,38 +195,34 @@ void displayInfo()
     } 
   }
   //if we can see some satellites then show the data...
-  else {
+  else{
   tft.drawString("ALT: " + String(int(gps.altitude.meters()))+"      ",180,120);
   if(dir=="d"){
     tft.drawString(" D: " + String(int(gps.course.deg()))+"         ",200,150);
-    Serial.println(dir);
     } 
-    else if(dir=="c") {
+    else if(dir=="c"){
       tft.drawString(" C: " + String(TinyGPSPlus::cardinal(gps.course.deg()))+"         ",200,150);
-      Serial.println(dir);
     } 
   }
-
 }
 
 //Handle the button clicks
 //only short and long are enabled - no multi-press
 void click(Button2& btn){
-    switch (btn.getType()) {
+    //record the time the button was pressed and set the flag to state not saved...
+    lastButtonTime = millis(); 
+    stateIsSaved = false;
+    switch (btn.getType()){
         case single_click:
           //cycle through the brightness
-          if (btn == buttonA) {
+          if (btn == buttonA){
             if (brightness<250){
               brightness=brightness+50;
               analogWrite(PIN_LCD_BL,brightness);
-              Serial.print("Brightness : ");
-              Serial.println(String(brightness));
             }
             else if(brightness>=250){
               brightness=50;
               analogWrite(PIN_LCD_BL,brightness);
-              Serial.print("Brightness : ");
-              Serial.println(String(brightness));
             }
           } 
           else if (btn == buttonB) {
@@ -301,5 +323,12 @@ void displaythetime(void)
   }
   //print the time to the display
     tft.drawString("T: "+ shour + ":" + smin +"  ",10,120);
+}
 
+static void saveCurrentState(){
+    prefs.putString("mem_units",units);
+    prefs.putString("mem_dir",dir);
+    prefs.putInt("mem_colour",TXT_Colour);
+    prefs.putInt("mem_bright",brightness);
+  stateIsSaved = true;
 }
