@@ -88,13 +88,11 @@ void setup()
     //set the brightness here otherewise it won't be done 'till there is a GPS fix...
     analogWrite(PIN_LCD_BL,brightness);
   }
+  //otherwise write the default conditions - optional don't really need to do this  
   else{
-    
     saveCurrentState();
     prefs.putUInt("mem_flag",1);
   }
-
-
 }
 
 void loop()
