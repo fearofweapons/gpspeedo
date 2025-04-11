@@ -89,9 +89,12 @@ void setup()
     analogWrite(PIN_LCD_BL,brightness);
   }
   else{
+    
     saveCurrentState();
     prefs.putUInt("mem_flag",1);
   }
+
+
 }
 
 void loop()
@@ -108,7 +111,7 @@ void loop()
     buttonA.loop();
     buttonB.loop();
     }
-  //check to see if a button was pressed >10 seconds ago AND we need to update the saved state.
+  //check to see if a button was pressed AND we need to update the saved state.
   if (!stateIsSaved && (millis() - lastButtonTime > 10000)){ 
     saveCurrentState();
   } 
@@ -174,10 +177,11 @@ void displayInfo()
    tft.setTextFont(4);
 
 //if time has been set then display the time
-  if (t_set==1){
+  if (t_set==1)
+  {
   displaythetime();
   }
-  else{
+  else  {
     tft.drawString("T: --:--",10,120);
   }
 
@@ -185,7 +189,8 @@ void displayInfo()
   tft.drawString("S: " + String(gps.satellites.value())+"    ",10,150);
 
 //If there are no satellites blank the vaules. Time stays as thats taken from the device time.
-  if(gps.satellites.value()<1){
+  if(gps.satellites.value()<1)
+  {
     tft.drawString("ALT: --     ",180,120);
       if(dir=="d"){
         tft.drawString("D: --       ",200,150);
@@ -195,15 +200,16 @@ void displayInfo()
     } 
   }
   //if we can see some satellites then show the data...
-  else{
+  else {
   tft.drawString("ALT: " + String(int(gps.altitude.meters()))+"      ",180,120);
   if(dir=="d"){
     tft.drawString(" D: " + String(int(gps.course.deg()))+"         ",200,150);
     } 
-    else if(dir=="c"){
+    else if(dir=="c") {
       tft.drawString(" C: " + String(TinyGPSPlus::cardinal(gps.course.deg()))+"         ",200,150);
     } 
   }
+
 }
 
 //Handle the button clicks
@@ -212,10 +218,10 @@ void click(Button2& btn){
     //record the time the button was pressed and set the flag to state not saved...
     lastButtonTime = millis(); 
     stateIsSaved = false;
-    switch (btn.getType()){
+    switch (btn.getType()) {
         case single_click:
           //cycle through the brightness
-          if (btn == buttonA){
+          if (btn == buttonA) {
             if (brightness<250){
               brightness=brightness+50;
               analogWrite(PIN_LCD_BL,brightness);
@@ -265,7 +271,8 @@ void click(Button2& btn){
             if (btn == buttonB) {
               if (units=="k"){
                 units="m";
-                } else if (units=="m"){
+                }
+                else{
                 units="k";
               }
               displayInfo();
@@ -274,7 +281,8 @@ void click(Button2& btn){
             if (btn == buttonA) {
               if (dir=="d"){
                 dir="c";
-                } else if (dir=="c"){
+                } 
+                else{
                 dir="d";
                 }
               displayInfo();
