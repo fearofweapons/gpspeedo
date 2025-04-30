@@ -40,7 +40,7 @@ Preferences prefs;
 //setup global variables for latter use
 unsigned long milli_delay=500;
 int spd=0,num_sats=0,brightness=250,TXT_Colour=TFT_WHITE,TXT_Back=TFT_BLACK;
-String units="m",dir="c";
+string units="m",dir="c";
 bool stateIsSaved = true;
 long int lastButtonTime = millis();
 
